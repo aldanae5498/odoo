@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <template id="report_ordenes_globales">
+            <t t-set="company" t-value="env.company"/>
+            <t t-call="web.html_container">
+                <t t-call="web.internal_layout">
+                    <div class="page">
+                        <div class="text-center">
+                            <h2>Órdenes Globales</h2>
+                            <strong><t t-esc="date_start" t-options="{'widget': 'datetime'}"/> - <t t-esc="date_stop" t-options="{'widget': 'datetime'}"/></strong>
+                        </div>
+
+                        <!-- ================= Punto de Venta ================= -->
+                        <h3>Punto de Venta</h3>
+                        <!-- ==== Inicializando acumulador del Total de Ventas del Punto de Venta ==== -->
+                        <t t-set="total_venta_tpv" t-value="0" />
+                        <!-- ==== Inicializando acumulador del Total de Costos del Punto de Venta ==== -->
+                        <t t-set="total_costo_tpv" t-value="0" />
+                        <table  class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15px!important; text-align: left!important;">N° Pedido</th>
+                                    <th style="width: 100px!important; text-align: left!important;">Cliente</th>
+                                    <th style="width: 120px!important; text-align: left!important;">Fecha</th>
+                                    <th style="width: 80px!important; text-align: right!important;">SubV</th>
+                                    <th style="width: 80px!important; text-align: right!important;">SubC</th>
+                                    <th style="width: 95px!important; text-align: right!important;">Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach='orders' t-as='order'>
+                                    <td style="text-align: left!important;"><t t-esc="order['name']"/></td>
+                                    <td style="text-align: left!important;"><span t-field="order.partner_id.name"/></td>
+                                    <td style="text-align: left!important;"><t t-esc="order['date_order']"/></td>
+
+                                    <!-- ================= Sub Total Venta ================= -->
+                                    <t t-set="sub_total_venta_tpv" t-value="0" />
+                                    <t t-foreach="order.lines" t-as="details_tpv">
+                                        <t t-set="sub_total_venta_tpv" t-value="sub_total_venta_tpv+details_tpv['price_subtotal_incl']" />
+                                    </t>                                    
+                                    <td style="text-align: right!important;"><t t-esc="sub_total_venta_tpv" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+
+                                    <!-- ================= Sub Total Costo ================= -->
+                                    <t t-set="sub_total_costo_tpv" t-value="0" />
+                                    <t t-foreach="order.lines" t-as="details_tpv">
+                                        <t t-set="sub_total_costo_tpv" t-value="sub_total_costo_tpv+details_tpv['total_cost']" />
+                                    </t>
+                                    <td style="text-align: right!important;"><t t-esc="sub_total_costo_tpv" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+
+                                    <!-- ================= Margen ================= -->
+                                    <td style="text-align: right!important;">
+                                        <t t-esc="sub_total_venta_tpv - sub_total_costo_tpv" t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-esc="calcular_porcentaje_margen(sub_total_costo_tpv, sub_total_venta_tpv, False)" t-options="{'widget': 'float', 'precision': currency_precision}"/> %)
+                                    </td>
+
+                                    <!-- ==== Incrementando acumulador del Total de Ventas del Punto de Venta ==== -->
+                                    <t t-set="total_venta_tpv" t-value="total_venta_tpv+order['amount_total']" />
+                                    <!-- ==== Incrementando acumulador del Total de Costos del Punto de Venta ==== -->
+                                    <t t-set="total_costo_tpv" t-value="total_costo_tpv+sub_total_costo_tpv" />                                    
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <br/>
+                        <hr/>
+                        <br/>
+
+                        <!-- ================= Administrativo ================= -->
+                        <h3>Administrativo</h3>
+                        <!-- ==== Inicializando acumulador del Total de Ventas del Administrativo ==== -->
+                        <t t-set="total_venta_admin" t-value="0" />
+                        <!-- ==== Inicializando acumulador del Total de Costos del Administrativo ==== -->
+                        <t t-set="total_costo_admin" t-value="0" />                        
+                        <table  class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15px!important; text-align: left!important;">N° Pedido</th>
+                                    <th style="width: 100px!important; text-align: left!important;">Cliente</th>
+                                    <th style="width: 120px!important; text-align: left!important;">Fecha</th>
+                                    <th style="width: 80px!important; text-align: right!important;">SubV</th>
+                                    <th style="width: 80px!important; text-align: right!important;">SubC</th>
+                                    <th style="width: 95px!important; text-align: right!important;">Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach='sale_orders' t-as='sale_order'>
+                                    <td style="text-align: left!important;"><t t-esc="sale_order['name']"/></td>
+                                    <td style="text-align: left!important;"><span t-field="sale_order.partner_id.name"/></td>
+                                    <td style="text-align: left!important;"><t t-esc="sale_order['date_order']"/></td>
+
+                                    <!-- ================= Sub Total Venta ================= -->
+                                    <t t-set="sub_total_venta_admin" t-value="0" />
+                                    <t t-foreach="sale_order.order_line" t-as="details_admin">
+                                        <t t-set="sub_total_venta_admin" t-value="sub_total_venta_admin+details_admin['price_total']" />
+                                    </t>                                    
+                                    <td style="text-align: right!important;"><t t-esc="sub_total_venta_admin" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+
+                                    <!-- ================= Sub Total Costo ================= -->
+                                    <t t-set="sub_total_costo_admin" t-value="0" />
+                                    <t t-foreach="sale_order.order_line" t-as="details_admin">
+                                        <t t-set="sub_total_costo_admin" t-value="sub_total_costo_admin+(details_admin['purchase_price'] * details_admin['product_uom_qty'])" />
+                                    </t>
+                                    <td style="text-align: right!important;"><t t-esc="sub_total_costo_admin" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+
+                                    <!-- ================= Margen ================= -->
+                                    <td style="text-align: right!important;">
+                                        <t t-esc="sub_total_venta_admin - sub_total_costo_admin" t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-esc="calcular_porcentaje_margen(sub_total_costo_admin, sub_total_venta_admin, False)" t-options="{'widget': 'float', 'precision': currency_precision}"/> %)
+                                    </td>
+
+                                    <!-- ==== Incrementando acumulador del Total de Ventas del Administrativo ==== -->
+                                    <t t-set="total_venta_admin" t-value="total_venta_admin+sale_order['amount_total']" />
+                                    <!-- ==== Incrementando acumulador del Total de Costos del Administrativo ==== -->
+                                    <t t-set="total_costo_admin" t-value="total_costo_admin+sub_total_costo_admin" />
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <br/>
+                        <br/>
+                        
+                        <!-- ================= Margen - Punto de Venta ================= -->
+                        <h3>Margen - Punto de Venta</h3>
+                        <table  class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px!important;">Moneda</th>
+                                    <th style="text-align: right!important;">Total Venta</th>
+                                    <th style="text-align: right!important;">Total Costo</th>
+                                    <th style="text-align: right!important;">Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Bs.</td>
+                                    <td style="text-align: right!important;"><t t-esc='total_venta_tpv' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    <td style="text-align: right!important;"><t t-esc='total_costo_tpv' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    <td style="text-align: right!important;">
+                                        <t t-esc='total_venta_tpv - total_costo_tpv' t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-if='total_costo_tpv != 0'><t t-esc='calcular_porcentaje_margen(total_costo_tpv, total_venta_tpv, False)' t-options="{'widget': 'float', 'precision': currency_precision}" />%</t><t t-else="">0%</t>)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>$</td>
+                                    <t t-if='tasa_vigente != 0'>
+                                        <td style="text-align: right!important;"><t t-esc='total_venta_tpv / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    </t> 
+                                    <t t-else="">     
+                                        <td style="text-align: right!important;">0</td>
+                                    </t>
+
+                                    <t t-if='tasa_vigente != 0'>
+                                        <td style="text-align: right!important;"><t t-esc='total_costo_tpv / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    </t>
+                                    <t t-else="">  
+                                        <td style="text-align: right!important;">0</td>
+                                    </t>
+                                    
+                                    <td style="text-align: right!important;">
+                                        <t t-if='tasa_vigente != 0'>
+                                            <t t-esc='(total_venta_tpv - total_costo_tpv) / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-if='total_costo_tpv != 0'><t t-esc='calcular_porcentaje_margen(total_costo_tpv, total_venta_tpv, False) / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}" />%</t><t t-else="">0%</t>)    
+                                        </t>                        
+                                    </td>
+                                </tr>                                         
+                            </tbody>
+                        </table>
+
+                        <!-- ================= Margen - Administrativo ================= -->
+                        <h3>Margen - Administrativo</h3>
+                        <table  class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px!important;">Moneda</th>
+                                    <th style="text-align: right!important;">Total Venta</th>
+                                    <th style="text-align: right!important;">Total Costo</th>
+                                    <th style="text-align: right!important;">Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Bs.</td>
+                                    <td style="text-align: right!important;"><t t-esc='total_venta_admin' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    <td style="text-align: right!important;"><t t-esc='total_costo_admin' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    <td style="text-align: right!important;">
+                                        <t t-esc='total_venta_admin - total_costo_admin' t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-if='total_costo_admin != 0'><t t-esc='calcular_porcentaje_margen(total_costo_admin, total_venta_admin, False)' t-options="{'widget': 'float', 'precision': currency_precision}" />%</t><t t-else="">0%</t>)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>$</td>
+                                    <t t-if='tasa_vigente != 0'>
+                                        <td style="text-align: right!important;"><t t-esc='total_venta_admin / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    </t> 
+                                    <t t-else="">     
+                                        <td style="text-align: right!important;">0</td>
+                                    </t>
+
+                                    <t t-if='tasa_vigente != 0'>
+                                        <td style="text-align: right!important;"><t t-esc='total_costo_admin / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    </t>
+                                    <t t-else="">  
+                                        <td style="text-align: right!important;">0</td>
+                                    </t>
+                                    
+                                    <td style="text-align: right!important;">
+                                        <t t-if='tasa_vigente != 0'>
+                                            <t t-esc='(total_venta_admin - total_costo_admin) / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-if='total_costo_admin != 0'><t t-esc='calcular_porcentaje_margen(total_costo_admin, total_venta_admin, False) / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}" />%</t><t t-else="">0%</t>)    
+                                        </t>                        
+                                    </td>
+                                </tr>                                         
+                            </tbody>
+                        </table>
+
+                        <br/>
+                        <br/>
+
+                        <!-- ================= Margen - Totales ================= -->
+                        <!-- ==== Total Venta (Punto de Venta y Administrativo) ==== -->
+                        <t t-set="total_venta_todo" t-value="total_venta_tpv + total_venta_admin" />
+                        <!-- ==== Total Costo (Punto de Venta y Administrativo) ==== -->
+                        <t t-set="total_costo_todo" t-value="total_costo_tpv + total_costo_admin" />                        
+                        <!-- ================= Margen - Totales ================= -->
+                        <h3>Margen - Totales</h3>
+                        <table  class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px!important;">Moneda</th>
+                                    <th style="text-align: right!important;">Total Venta</th>
+                                    <th style="text-align: right!important;">Total Costo</th>
+                                    <th style="text-align: right!important;">Margen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Bs.</td>
+                                    <td style="text-align: right!important;"><t t-esc='total_venta_todo' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    <td style="text-align: right!important;"><t t-esc='total_costo_todo' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    <td style="text-align: right!important;">
+                                        <t t-esc='total_venta_todo - total_costo_todo' t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-if='total_costo_todo != 0'><t t-esc='calcular_porcentaje_margen(total_costo_todo, total_venta_todo, False)' t-options="{'widget': 'float', 'precision': currency_precision}" />%</t><t t-else="">0%</t>)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>$</td>
+                                    <t t-if='tasa_vigente != 0'>
+                                        <td style="text-align: right!important;"><t t-esc='total_venta_todo / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    </t> 
+                                    <t t-else="">     
+                                        <td style="text-align: right!important;">0</td>
+                                    </t>
+
+                                    <t t-if='tasa_vigente != 0'>
+                                        <td style="text-align: right!important;"><t t-esc='total_costo_todo / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                    </t>
+                                    <t t-else="">  
+                                        <td style="text-align: right!important;">0</td>
+                                    </t>
+                                    
+                                    <td style="text-align: right!important;">
+                                        <t t-if='tasa_vigente != 0'>
+                                            <t t-esc='(total_venta_todo - total_costo_todo) / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/> (<t t-if='total_costo_todo != 0'><t t-esc='calcular_porcentaje_margen(total_costo_todo, total_venta_todo, False) / tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}" />%</t><t t-else="">0%</t>)    
+                                        </t>                        
+                                    </td>
+                                </tr>                                         
+                            </tbody>
+                        </table>
+                        
+                        <!-- ================= Tasa ================= -->
+                        <h3>Tasa</h3>
+                        <table  class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px!important;">Conversión</th>
+                                    <th style="width: 30px!important;">Valor</th>
+                                </tr>
+                            </thead>                
+                            <tbody>
+                                <tr>
+                                    <td>$ -> Bs</td>
+                                    <td><t t-esc='tasa_vigente' t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                </tr>
+                                <tr>
+                                    <td>Bs -> $</td>
+                                    <td><t t-esc='tasa_vigente_usd'/></td>
+                                </tr>                    
+                            </tbody>
+                        </table>                        
+
+                    </div>
+                </t>
+            </t>
+        </template>
+    </data>
+</openerp>
