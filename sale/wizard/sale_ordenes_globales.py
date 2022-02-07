@@ -40,8 +40,8 @@ class PosDetails(models.TransientModel):
         # earliest of the latest sessions
         return latest_start_dates and min(latest_start_dates) or fields.Datetime.now()
 
-    start_date = fields.Datetime(required=True, default=_default_start_date)
-    end_date = fields.Datetime(required=True, default=fields.Datetime.now)
+    start_date = fields.Datetime('Fecha de inicio', required=True, default=_default_start_date)
+    end_date = fields.Datetime('Fecha final', required=True, default=fields.Datetime.now)
     # pos_config_ids = fields.Many2many('pos.config', 'pos_detail_configs',
     # default=lambda s: s.env['pos.config'].search([]))
 
