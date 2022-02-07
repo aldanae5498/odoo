@@ -15,8 +15,8 @@
                     </group> 
                     -->
                     <footer>
-                        <button name="generate_report" string="Print" type="object" class="btn-primary" data-hotkey="q"/>
-                        <button string="Cancel" class="btn-secondary" special="cancel" data-hotkey="z" />
+                        <button name="generate_report" string="Imprimir" type="object" class="btn-primary" data-hotkey="q"/>
+                        <button string="Cancelar" class="btn-secondary" special="cancel" data-hotkey="z" />
                     </footer>
                 </form>
             </field>
