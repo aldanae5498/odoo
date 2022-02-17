@@ -42,7 +42,7 @@ class ProductPricelistReport(models.AbstractModel):
         rate_usd = round(rate_usd, decimales)
 
         rate_bolivar = self.env['res.currency'].search(
-            [('name', '=', 'Bs.')], limit=1).rate      
+            [('name', '=', 'VEF')], limit=1).rate      
             
         tasa_vigente = round(rate_bolivar, decimales) / round(rate_usd, decimales)
         tasa_vigente = round(tasa_vigente, decimales)
