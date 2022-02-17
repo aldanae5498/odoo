@@ -1161,7 +1161,7 @@ class ReportOrdenesGlobales(models.AbstractModel):
 
         # ================== Precio del Bolívar ================== #
         rate_bolivar = self.env['res.currency'].search(
-            [('name', '=', 'Bs')], limit=1).rate      
+            [('name', '=', 'VEF')], limit=1).rate      
 
         # ================== Tasa Vigente ================== #
         tasa_vigente = round(rate_bolivar, decimales) / round(rate_usd, decimales)
