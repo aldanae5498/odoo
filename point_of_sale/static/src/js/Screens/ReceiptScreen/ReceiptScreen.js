@@ -247,7 +247,7 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                                 tax_format = '!';
                                 break;
                             case 3: // IVA (8.0%) ventas
-                                tax_format = '#';
+                                tax_format = '"';
                                 break;                                                  
                         }
                     }
