@@ -176,8 +176,12 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                 // UPDATE 16-02-2022:
                 let order = this.currentOrder;
             
+                console.log('Datos de la Factura:');
+                console.log(order);
+                
                 // Datos de la orden:
                 let order_uid = order.uid; 
+                let totalPagarUser = order.selected_paymentline.amount; 
                 // console.log('Orden UID:');
                 // console.log(order_uid);
     
@@ -197,35 +201,53 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                     cliente.phone = '';
                 }                                
     
-                let vat = 'iR*' + cliente.vat;
-                let nombre_cliente = 'iS*' + cliente.name;
-                let direccion_cliente = 'i00Direccion: ' + cliente.address;
-                let telefono_cliente = 'i01Telefono: ' + cliente.phone;
+                let orderUidIF = order_uid;
+                let orderUidUser = 'N° Factura: ' + order_uid;
 
-                // let datos_txt = '\n';
-                // datos_txt += vat  + '\n' + nombre_cliente + '\n' + direccion_cliente + '\n' + telefono_cliente + '\n\n';
-                let datos_txt = order_uid + '\n' + vat  + '\n' + nombre_cliente + '\n' + direccion_cliente + '\n' + telefono_cliente + '\n\n';
+                let vatIF = 'iR*' + cliente.vat;
+                let vatUser = 'Cédula/RIF: ' + cliente.vat;
+
+                let nombreClienteIF = 'iS*' + cliente.name;
+                let nombreClienteUser = 'Cliente: ' + cliente.name;
+
+                let direccionClienteIF = 'i00Direccion: ' + cliente.address;
+                let direccionClienteUser = 'Dirección: ' + cliente.address;
+
+                let telefonoClienteIF = 'i01Telefono: ' + cliente.phone;
+                let telefonoClienteUser = 'Teléfono: ' + cliente.phone;
+
+                let datosIF = orderUidIF + '\n' + vatIF  + '\n' + nombreClienteIF + '\n' + direccionClienteIF + '\n' + telefonoClienteIF + '\n\n';
+                let datosUser = orderUidUser + '\n' + vatUser  + '\n' + nombreClienteUser + '\n' + direccionClienteUser + '\n' + telefonoClienteUser + '\n\n';
     
                 // let datos = order.get_paymentlines();
-                let datos_productos = '';
+                let detalleProductoIF = '';
+
+                let detalleProductoUser = '';
+
                 let detalle_productos = order.get_orderlines();
                 for(let i=0; i<detalle_productos.length; i++) {
                     let datosRow = detalle_productos[i];
                     
                     let price = datosRow['price'];
                     let quantity = datosRow['quantity'];
+                    
+                    let sub_total = price * quantity;
+                    // sub_total = parseFloat(sub_total);
+                    sub_total = sub_total.toFixed(2);
 
-                    // console.log('Price: ' + price);
-                    /// let sub_total = price * quantity;
-    
                     let product = datosRow['product'];
 
                     console.log('Barcode: ' + product['barcode']);
                     console.log('Barcode typeof: ' + typeof product['barcode']);
-                    let barcode = '';
+
+                    let barcodeIF = '@' + '0000000000' + '\n';
+                    let barcodeUser = '';
                     if( typeof product['barcode'] !== 'boolean' ) {
                         if( product['barcode'] !== '' ) {
-                            barcode = '@' + product['barcode'] + '\n';
+                            barcodeIF = '@' + product['barcode'] + '\n';
+                            barcodeUser = 'Código de Barras: ' + product['barcode'] + '\n';
+                        } else {
+                            barcodeUser = 'Código de Barras: Sin especificar' + '\n';
                         }
                     }
 
@@ -236,18 +258,22 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                     // console.log('taxes_id:');
                     // console.log(taxes_id);
 
-                    let tax_format = ' ';
+                    let taxFormatIF = ' ';
+                    let taxFormatUser = 'Exento';
                     if( taxes_id.length > 0 ) {
                         let tax = taxes_id[0];
                         switch(tax) {
                             case 1: // Exento (ventas)
-                                tax_format = ' ';
+                                taxFormatIF = ' ';
+                                taxFormatUser = 'Exento';
                                 break;                                  
                             case 2: // IVA (16.0%) ventas
-                                tax_format = '!';
+                                taxFormatIF = '!';
+                                taxFormatUser = 'IVA (16.0%)';
                                 break;
                             case 3: // IVA (8.0%) ventas
-                                tax_format = '"';
+                                taxFormatIF = '#';
+                                taxFormatUser = 'IVA (8.0%)';
                                 break;                                                  
                         }
                     }
@@ -255,27 +281,29 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                     // UPDATE 18-02-2022:
                     let tramaCantidadPrecio = this.setTramaPrecioCantidad(price, quantity);
 
-                    // datos_productos += barcode + '\n' + quantity + 'x' + display_name + '-------> ' + sub_total + '\n';
-                    // datos_productos += barcode + '\n' + quantity + 'x' + display_name + '-------> ' + sub_total + '\n';
-                    datos_productos += barcode + tax_format + tramaCantidadPrecio + display_name + '\n';
+                    detalleProductoIF += barcodeIF + taxFormatIF + tramaCantidadPrecio + display_name + '\n';
+                    detalleProductoUser += barcodeUser + '\n' + quantity + 'x' + display_name + '-------> ' + sub_total + ' ('+taxFormatUser+')' + '\n';
                     console.log('---------------------------------------------');
                 }
-                console.log('Datos de la factura:');
+                console.log('Detalles de la factura:');
                 console.log(detalle_productos);                  
     
-                // let datos_txt = datos_cliente + '\n\n\n --------------- ' + detalle_productos;
-                datos_txt += datos_productos;
-                datos_txt += '3\n';
-                datos_txt += '101\n';
+                // Impresora Fiscal:
+                datosIF += detalleProductoIF;
+                datosIF += '3\n';
+                datosIF += '101\n';
+
+                // Usuario:
+                datosUser += detalleProductoUser;   
+                datosUser += '\nTotal: ' + totalPagarUser;
     
                 // console.log('Datos del cliente:');
                 // console.log(cliente); 
     
-                // Generando archivo txt:
-                // let filename = order_uid;
+                // Generando archivo txt (Impresora Fiscal):
                 let filename = 'factura_tpv';
                 let element = document.createElement('a');
-                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(datos_txt));
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(datosIF));
                 element.setAttribute('download', filename);
               
                 element.style.display = 'none';
@@ -284,18 +312,18 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                 element.click();
                 document.body.removeChild(element);
                 // ===================================================================================== //
-                // Enviando txt a impresora fiscal:
+                // Generando archivo txt (Usuario):
                 /*
-                $.ajax({
-                    type:'POST',
-                    url:'C:\Python27\BIXOLON812\TFHKA Venezuela - Python SDK\Demo Venezuela Python 4.0\impresora_fiscal_test.py',
-                    data: {
-                        'param': 1
-                    },
-                    success: function(data) {                                                     
-                        console.log('Todo bien');
-                    }
-                });                   
+                let filenameUser = order_uid;
+                let elementUser = document.createElement('a');
+                elementUser.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(datosUser));
+                elementUser.setAttribute('download', filenameUser);
+              
+                elementUser.style.display = 'none';
+                document.body.appendChild(elementUser);
+    
+                elementUser.click();
+                document.body.removeChild(elementUser);                
                 */
             
                 // ===================================================================================== //
