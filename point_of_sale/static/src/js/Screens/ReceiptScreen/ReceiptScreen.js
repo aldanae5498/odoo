@@ -98,78 +98,100 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                 }
             }
 
-            // UPDATE 17-02-2022:
-            setTramaPrecioCantidad(precio, cantidad) {
-                // let precio = '34.21';
-                // let cantidad = '564.90';
-                precio = precio.toFixed(2);
-                precio = precio.toString();
-                cantidad = cantidad.toString();
-                
-                // ===================== Trama del precio ===================== //
-                let precio_parte_entera = precio.split(".")[0]; 
-                let precio_parte_decimal = precio.substring(precio.indexOf('.') + 1);
-                if( precio_parte_decimal.length === 1 ) {
-                    precio_parte_decimal = precio_parte_decimal + '0';
-                }
+            // Inicio del UPDATE 24-02-2022.
+            // ===================================================================================== //
+            getParteEntera(numero) {
+                numero = Number(numero);
+                numero = Math.trunc(numero);
+                return numero;
+            }            
+
+            getParteDecimal(numero) {
+                let numberAfterDecimal = (numero % 1);
+                numberAfterDecimal = numberAfterDecimal.toFixed(2).toString();
+                numberAfterDecimal = numberAfterDecimal.substring(numberAfterDecimal.indexOf('.') + 1);
+                // UPDATE:
+                return numberAfterDecimal;     
         
-                // console.log('Parte entera: ' + precio_parte_entera);
-                // console.log('Parte decimal: ' + precio_parte_decimal);
+                /*
+                let numberAfterDecimal = parseInt((numero % 1).toFixed(2).substring(2));
+                // UPDATE:
+                let numberBeforeDecimal = parseInt(numero);
+                return numberAfterDecimal;        
+                */
+            }            
+
+            getTramaCantidad(cantidad) {
+                let parteEntera = this.getParteEntera(cantidad);
+                let parteDecimal = this.getParteDecimal(cantidad);
+                let cerosDecimal = '';
         
-                let precio_string = precio_parte_entera + precio_parte_decimal;
-                // console.log('Precio string: ' + precio_string);
-        
-                let longitud_precio_string = precio_string.length;
-                // console.log('Longitud del precio string: ' + longitud_precio_string);
-        
-                let diferencia_longitud_precio = 16 - longitud_precio_string;
-                let ceros_precio = '';
-                for(let i = 0; i < diferencia_longitud_precio; i++) {
-                    ceros_precio += '0';
-                }
-        
-                let trama_precio = ceros_precio + precio_string;
-                // console.log('Trama del precio: ' + trama_precio);
-        
-                // ===================== Trama de la cantidad ===================== //
-                let cantidad_parte_entera;
-                let cantidad_parte_decimal = '000';
-        
-                if( cantidad.indexOf('.') > -1 ) { // <---- Tiene decimales.
-                    cantidad_parte_entera = cantidad.split(".")[0];
-                    
-                    cantidad_parte_decimal = cantidad.substring(cantidad.indexOf('.') + 1);
-                    if( cantidad_parte_decimal.length === 0 ) {
-                        cantidad_parte_decimal = cantidad_parte_decimal + '000';
-                    } else if( cantidad_parte_decimal.length === 1 ) {
-                        cantidad_parte_decimal = cantidad_parte_decimal + '00';
-                    } else if( cantidad_parte_decimal.length === 2 ) {
-                        cantidad_parte_decimal = cantidad_parte_decimal + '0';
-                    }
-                } else {
-                    cantidad_parte_entera = cantidad;
+                let lenDigitosDecimal = parteDecimal.length;
+                switch (lenDigitosDecimal) {
+                    case 0:
+                        cerosDecimal = '000';
+                        break;
+                    case 1:
+                        cerosDecimal = '00';
+                        break;
+                    case 2:
+                        cerosDecimal = '0';
+                        break;                                
                 }
                 
-                let cantidad_string = cantidad_parte_entera + cantidad_parte_decimal;
-                // console.log('Cantidad string: ' + cantidad_string);
+                parteEntera = parteEntera.toString();
+                parteDecimal = parteDecimal.toString();
         
-                let longitud_cantidad_string = cantidad_string.length;
-                // console.log('Longitud del cantidad string: ' + longitud_cantidad_string);        
-                let diferencia_longitud_cantidad = 17 - longitud_cantidad_string;
-                let ceros_cantidad = '';
-                for(let i = 0; i < diferencia_longitud_cantidad; i++) {
-                    ceros_cantidad += '0';
-                }
+                // let cantidadFormateada = '<b style="color: green;">'+parteEntera + parteDecimal + cerosDecimal+'</b>';
+                let cantidadFormateada = parteEntera + parteDecimal + cerosDecimal;
         
-                let trama_cantidad = ceros_cantidad + cantidad_string;
-                // console.log('Trama de la cantidad: ' + trama_cantidad);      
-        
-                // ===================== Trama completa ===================== //
-                let trama_completa = trama_precio + trama_cantidad;
-                // console.log('Trama completa: ' + trama_completa);
+                let cantidadString = parteEntera.toString() + parteDecimal.toString(); 
+                let lenCantidadString = cantidadString.length;
                 
-                return trama_completa;
-            }
+                let diferenciaLenCantidad = 16 - lenCantidadString;
+                let cerosIzquierda = '';
+                for(let i = 0; i < diferenciaLenCantidad; i++) {
+                     cerosIzquierda += '0';
+                }
+                let trama = cerosIzquierda + cantidadFormateada;
+               
+                return [cantidadFormateada, trama];
+            }            
+
+            getTramaPrecio(precio) {
+                let parteEntera = this.getParteEntera(precio);
+                let parteDecimal = this.getParteDecimal(precio);
+                let cerosDecimal = '';
+        
+                let lenDigitosDecimal = parteDecimal.length;
+                switch (lenDigitosDecimal) {
+                    case 0:
+                        cerosDecimal = '00';
+                        break;
+                    case 1:
+                        cerosDecimal = '0';
+                        break;                             
+                }
+                
+                parteDecimal = parteDecimal.toString(); 
+                // let precioFormateado = '<b style="color: #f44336;">'+parteEntera + parteDecimal + cerosDecimal+'</b>';
+                let precioFormateado = parteEntera + parteDecimal + cerosDecimal;        
+        
+                let precioString = parteEntera.toString() + parteDecimal.toString(); 
+                //  console.log('Len string del precio: ' + precioString);
+                let lenPrecioString = precioString.length;
+                
+                let diferenciaLenPrecio = 16 - lenPrecioString;
+                let cerosIzquierda = '';
+                for(let i = 0; i < diferenciaLenPrecio; i++) {
+                     cerosIzquierda += '0';
+                }
+                let trama = cerosIzquierda + precioFormateado;
+               
+                return [precioFormateado, trama];
+            }            
+            // ===================================================================================== //
+            // Fin del UPDATE 24-02-2022.
 
             _shouldAutoPrint() {
                 // alert('Listo 2');
@@ -229,6 +251,8 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                     let datosRow = detalle_productos[i];
                     
                     let price = datosRow['price'];
+                    price = price.toFixed(2); // #  <--------- Importante.
+
                     let quantity = datosRow['quantity'];
                     
                     let sub_total = price * quantity;
@@ -278,10 +302,29 @@ odoo.define('point_of_sale.ReceiptScreen', function (require) {
                         }
                     }
 
-                    // UPDATE 18-02-2022:
-                    let tramaCantidadPrecio = this.setTramaPrecioCantidad(price, quantity);
+                    // ================ Precio ================ //
+                    let parteEnteraPrecio = this.getParteEntera(price);
+                    let parteDecimalPrecio = this.getParteDecimal(price);
+                    let tramaPrecio = this.getTramaPrecio(price)[1];   
+                    console.log('Precio: ' + price);
+                    console.log('Parte entera (Precio): ' + parteEnteraPrecio);
+                    console.log('Parte decimal (Precio): ' + parteDecimalPrecio)
+                    // console.log('Trama (Precio): ' + tramaPrecio);
+                    
+                    // ================ Cantidad ================ //
+                    let parteEnteraCantidad = this.getParteEntera(quantity);
+                    let parteDecimalCantidad = this.getParteDecimal(quantity);
+                    let tramaCantidad = this.getTramaCantidad(quantity)[1];    
+                    console.log('Cantidad: ' + quantity);
+                    console.log('Parte entera (Cantidad): ' + parteEnteraCantidad);
+                    console.log('Parte decimal (Cantidad): ' + parteDecimalCantidad);                    
+                    // console.log('Trama (Cantidad): ' + tramaCantidad);
 
-                    detalleProductoIF += barcodeIF + taxFormatIF + tramaCantidadPrecio + display_name + '\n';
+                    // UPDATE 24-02-2022:
+                    let tramaPrecioCantidad = tramaPrecio + tramaCantidad;
+                    // console.log('Trama completa: ' + tramaPrecioCantidad);
+
+                    detalleProductoIF += barcodeIF + taxFormatIF + tramaPrecioCantidad + display_name + '\n';
                     detalleProductoUser += barcodeUser + '\n' + quantity + 'x' + display_name + '-------> ' + sub_total + ' ('+taxFormatUser+')' + '\n';
                     console.log('---------------------------------------------');
                 }
