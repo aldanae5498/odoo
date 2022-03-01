@@ -6,8 +6,9 @@
                 <t t-call="web.external_layout">
                     <div class="page">
                         <br/>
-                        <h2>Valoración de Inventario</h2>
-                        <h2>ID del Producto: <strong t-esc="product_id"/></h2>
+                        <h2 style="text-align: center!important;">Valoración de Inventario</h2>
+                        <!-- <h2>ID del Producto: <strong t-esc="product_id"/></h2> -->
+
                         <t t-set="locations" t-value="docs.mapped('location_id')"/>
                         <table class="table table-sm">
                             <thead>
@@ -23,16 +24,19 @@
                                     <th class="text-right"><strong>Valor</strong></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody>                       
                                 <t t-foreach="locations" t-as="location">
                                     <tr groups="stock.group_stock_multi_locations">
                                         <td colspan="2"><strong t-esc="location.display_name"/></td>
                                         <td groups="stock.group_production_lot"></td>
                                         <td groups="stock.group_tracking_lot"></td>
                                         <td></td>
-                                    </tr>
+                                    </tr>                                  
+                                    <!-- Inicializando la variable del total de valoración -->  
+                                    <t t-set="total_valoracion" t-value="0" />                                         
                                     <tr t-foreach="docs.filtered(lambda quant: quant.location_id.id == location.id)" t-as="line">
                                         <t t-if="line.quantity != 0">
+                                            <t t-set= "valor" t-value="line.quantity * line.product_id.standard_price" />
                                             <td groups="stock.group_stock_multi_locations"></td>
                                             <td>
                                                 <t t-if="line.product_id.barcode == False">
@@ -48,12 +52,23 @@
                                             <td groups="stock.group_tracking_lot"><span t-field="line.package_id"/></td>
                                             <!-- <td class="text-right"><span t-field="line.available_quantity"/> <span t-field="line.product_uom_id" groups="uom.group_uom"/></td> -->
                                             <td class="text-right"><span t-field="line.quantity"/> <span t-field="line.product_uom_id" groups="uom.group_uom"/></td>
-                                            <td class="text-right"> <span t-esc="line.quantity * line.product_id.standard_price" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>                                        
+                                            <td class="text-right"> <span t-esc="valor" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                            <t t-set="total_valoracion" t-value="total_valoracion+valor" />                                        
+                                        </t>
+                                        <t t-else="">
+                                            <t t-set="total_valoracion" t-value="total_valoracion+0" />
                                         </t>
                                     </tr>
+                                    
                                 </t>
                             </tbody>
                         </table>
+
+                        <br/>
+
+                        <h2 style="text-align: center!important;">Total</h2>
+                        <h3 style="text-align: center!important;"><t t-esc='total_valoracion' t-options="{'widget': 'float', 'precision': currency_precision}"/> $</h3>
+                    
                     </div>
                 </t>
             </t>
