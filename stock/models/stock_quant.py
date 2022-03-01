@@ -1040,6 +1040,117 @@ class ReportValoracionInventario(models.AbstractModel):
             domain_stock_quant = (True, '=', True)
         else:
             # Ubicación:
+            
+            if location_id != '':
+                domain_stock_quant = [('location_id', '=', location_id)]
+            
+            '''
+            # Producto:
+            if product_id != '':
+                domain_stock_quant = [('product_id', '=', product_id)]
+            '''            
+
+        domain_stock_quant = AND(
+            [
+                domain_stock_quant, 
+                [
+                    ('location_id.usage', '=', 'internal'),
+                ]
+            ]
+        )               
+        stock_quant = self.env['stock.quant'].search(domain_stock_quant)
+
+        return {
+            'categ_id': categ_id,
+            'location_id': location_id,
+            'product_id': product_id,
+            'docs': stock_quant,
+        }
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        data = dict(data or {})
+        data.update(self.get_valoracion_inventario(data['categ_id'], data['location_id'], data['product_id'])
+        )
+        return dataute_package_info',
+        index=True, readonly=True, store=True)
+    company_id = fields.Many2one(
+        'res.company', 'Company', compute='_compute_package_info',
+        index=True, readonly=True, store=True)
+    owner_id = fields.Many2one(
+        'res.partner', 'Owner', compute='_compute_package_info', search='_search_owner',
+        index=True, readonly=True, compute_sudo=True)
+    package_use = fields.Selection([
+        ('disposable', 'Disposable Box'),
+        ('reusable', 'Reusable Box'),
+        ], string='Package Use', default='disposable', required=True,
+        help="""Reusable boxes are used for batch picking and emptied afterwards to be reused. In the barcode application, scanning a reusable box will add the products in this box.
+        Disposable boxes aren't reused, when scanning a disposable box in the barcode application, the contained products are added to the transfer.""")
+
+    @api.depends('quant_ids.package_id', 'quant_ids.location_id', 'quant_ids.company_id', 'quant_ids.owner_id', 'quant_ids.quantity', 'quant_ids.reserved_quantity')
+    def _compute_package_info(self):
+        for package in self:
+            values = {'location_id': False, 'owner_id': False}
+            if package.quant_ids:
+                values['location_id'] = package.quant_ids[0].location_id
+                if all(q.owner_id == package.quant_ids[0].owner_id for q in package.quant_ids):
+                    values['owner_id'] = package.quant_ids[0].owner_id
+                if all(q.company_id == package.quant_ids[0].company_id for q in package.quant_ids):
+                    values['company_id'] = package.quant_ids[0].company_id
+            package.location_id = values['location_id']
+            package.company_id = values.get('company_id')
+            package.owner_id = values['owner_id']
+
+    def _search_owner(self, operator, value):
+        if value:
+            packs = self.search([('quant_ids.owner_id', operator, value)])
+        else:
+            packs = self.search([('quant_ids', operator, value)])
+        if packs:
+            return [('id', 'parent_of', packs.ids)]
+        else:
+            return [('id', '=', False)]
+
+    def unpack(self):
+        for package in self:
+            move_line_to_modify = self.env['stock.move.line'].search([
+                ('package_id', '=', package.id),
+                ('state', 'in', ('assigned', 'partially_available')),
+                ('product_qty', '!=', 0),
+            ])
+            move_line_to_modify.write({'package_id': False})
+            package.mapped('quant_ids').sudo().write({'package_id': False})
+
+        # Quant clean-up, mostly to avoid multiple quants of the same product. For example, unpack
+        # 2 packages of 50, then reserve 100 => a quant of -50 is created at transfer validation.
+        self.env['stock.quant']._quant_tasks()
+
+    def action_view_picking(self):
+        action = self.env["ir.actions.actions"]._for_xml_id("stock.action_picking_tree_all")
+        domain = ['|', ('result_package_id', 'in', self.ids), ('package_id', 'in', self.ids)]
+        pickings = self.env['stock.move.line'].search(domain).mapped('picking_id')
+        action['domain'] = [('id', 'in', pickings.ids)]
+        return action
+
+    def _get_contained_quants(self):
+        return self.env['stock.quant'].search([('package_id', 'in', self.ids)])
+
+# UPDATE 23-02-2022:
+class ReportValoracionInventario(models.AbstractModel):
+    _name = 'report.stock.report_valoracion_wizard'
+    _description = 'Valoración de Inventario'
+
+    @api.model
+    def get_valoracion_inventario(self, categ_id, location_id, product_id):
+        # ================== Órdenes ================== #
+
+        domain_stock_quant = []
+
+        # Sin filtro:
+        if categ_id == '' and location_id == '' and product_id == '':
+            domain_stock_quant = (True, '=', True)
+        else:
+            # Ubicación:
             '''
             if location_id != '':
                 domain_stock_quant = [('location_id', '=', location_id)]
