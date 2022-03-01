@@ -33,13 +33,13 @@
                             <td style="text-align: right!important;">
                                 <t t-esc="line['quantity']" t-options="{'widget': 'float', 'precision': currency_precision}" />
                                 <t t-if='line["uom"] != "Units"'>
-                                    <t t-esc='line["uom"]' /> 
+                                    <t t-esc='line["uom"]' t-options="{'widget': 'float', 'precision': currency_precision}"/> 
                                 </t>
                             </td>
                             <td style="text-align: right!important;">
                                 <t t-esc='line["price_unit"]' t-options="{'widget': 'float', 'precision': currency_precision}"/>
                                 <t t-if='line["discount"] != 0'>
-                                    Disc: <t t-esc='line["discount"]' />%
+                                    Disc: <t t-esc='line["discount"]' t-options="{'widget': 'float', 'precision': currency_precision}"/>%
                                 </t>
                             </td>
                             <td style="text-align: right!important;"><t t-esc="line['standard_price']" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
