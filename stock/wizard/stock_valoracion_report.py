@@ -18,11 +18,11 @@ class StockValoracionReport(models.TransientModel):
     categ_id = fields.Many2one(
         'product.category', 'Categoría',
         change_default=True, default=_get_default_category_id,
-        required=True, help="Seleccione la categoría del producto")
+        required=False, help="Seleccione la categoría del producto")
 
     location_id = fields.Many2one(
         'stock.location', 'Almacén',
-        change_default=True, required=False, help="Seleccione el almacén", domain="[('usage', '=', 'internal')]")        
+        change_default=True, required=True, help="Seleccione el almacén", domain="[('usage', '=', 'internal')]")        
 
     product_id = fields.Many2one(
         'product.template', 'Producto',
