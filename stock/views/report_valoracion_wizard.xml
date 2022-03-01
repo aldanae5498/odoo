@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <template id="report_valoracion_wizard">
+            <t t-call="web.html_container">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <br/>
+                        <h2>Valoración de Inventario</h2>
+                        <h2>ID del Producto: <strong t-esc="product_id"/></h2>
+                        <t t-set="locations" t-value="docs.mapped('location_id')"/>
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th groups="stock.group_stock_multi_locations"><strong>Ubicación</strong></th>
+                                    <th><strong>SKU</strong></th>
+                                    <th><strong>Producto</strong></th>
+                                    <th><strong>Costo</strong></th>
+                                    <th groups="stock.group_production_lot"><strong>Lot/Serial Number</strong></th>
+                                    <th groups="stock.group_tracking_lot"><strong>Package</strong></th>
+                                    <!-- <th class="text-right"><strong>Available Quantity</strong></th> -->
+                                    <th class="text-right" style="width: 180px!important;"><strong>Existencia</strong></th>
+                                    <th class="text-right"><strong>Valor</strong></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="locations" t-as="location">
+                                    <tr groups="stock.group_stock_multi_locations">
+                                        <td colspan="2"><strong t-esc="location.display_name"/></td>
+                                        <td groups="stock.group_production_lot"></td>
+                                        <td groups="stock.group_tracking_lot"></td>
+                                        <td></td>
+                                    </tr>
+                                    <tr t-foreach="docs.filtered(lambda quant: quant.location_id.id == location.id)" t-as="line">
+                                        <t t-if="line.quantity != 0">
+                                            <td groups="stock.group_stock_multi_locations"></td>
+                                            <td>
+                                                <t t-if="line.product_id.barcode == False">
+                                                    No especificado
+                                                </t>
+                                                <t t-else="">
+                                                    <span t-field="line.product_id.barcode"/>
+                                                </t>
+                                            </td>
+                                            <td><span t-field="line.product_id"/></td>
+                                            <td><span t-field="line.product_id.standard_price"/></td>
+                                            <td groups="stock.group_production_lot"><span t-field="line.lot_id"/></td>
+                                            <td groups="stock.group_tracking_lot"><span t-field="line.package_id"/></td>
+                                            <!-- <td class="text-right"><span t-field="line.available_quantity"/> <span t-field="line.product_uom_id" groups="uom.group_uom"/></td> -->
+                                            <td class="text-right"><span t-field="line.quantity"/> <span t-field="line.product_uom_id" groups="uom.group_uom"/></td>
+                                            <td class="text-right"> <span t-esc="line.quantity * line.product_id.standard_price" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>                                        
+                                        </t>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </template>
+    </data>
+</odoo>
