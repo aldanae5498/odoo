@@ -15,19 +15,19 @@
                                 <tr>
                                     <th groups="stock.group_stock_multi_locations"><strong>Ubicación</strong></th>
                                     <th><strong>SKU</strong></th>
-                                    <th><strong>Producto</strong></th>
-                                    <th><strong>Costo</strong></th>
+                                    <th style="width: 940px!important; text-align: left!important;"><strong>Producto</strong></th>
+                                    <th style="text-align: right!important;"><strong>Costo</strong></th>
                                     <th groups="stock.group_production_lot"><strong>Lot/Serial Number</strong></th>
                                     <th groups="stock.group_tracking_lot"><strong>Package</strong></th>
                                     <!-- <th class="text-right"><strong>Available Quantity</strong></th> -->
-                                    <th class="text-right" style="width: 180px!important;"><strong>Existencia</strong></th>
-                                    <th class="text-right"><strong>Valor</strong></th>
+                                    <th class="text-right" style="width: 160px!important;"><strong>Existencia</strong></th>
+                                    <th class="text-right" style="width: 160px!important;"><strong>Valor</strong></th>
                                 </tr>
                             </thead>
                             <tbody>                       
                                 <t t-foreach="locations" t-as="location">
                                     <tr groups="stock.group_stock_multi_locations">
-                                        <td colspan="2"><strong t-esc="location.display_name"/></td>
+                                        <td colspan="5"><strong t-esc="location.display_name"/></td>
                                         <td groups="stock.group_production_lot"></td>
                                         <td groups="stock.group_tracking_lot"></td>
                                         <td></td>
