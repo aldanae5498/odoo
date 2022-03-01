@@ -94,11 +94,11 @@
             'point_of_sale/static/src/js/Screens/ClientListScreen/ClientListScreen.js',
             'point_of_sale/static/src/js/Screens/TicketScreen/ControlButtons/InvoiceButton.js',
             'point_of_sale/static/src/js/Screens/TicketScreen/ControlButtons/ReprintReceiptButton.js',
-            'point_of_sale/static/src/js/Screens/TicketScreen/ControlButtons/AnularReceiptButton.js', # <-- UPDATE 25-02-2022
+            # 'point_of_sale/static/src/js/Screens/TicketScreen/ControlButtons/AnularReceiptButton.js', # <-- UPDATE 25-02-2022
             'point_of_sale/static/src/js/Screens/TicketScreen/OrderDetails.js',
             'point_of_sale/static/src/js/Screens/TicketScreen/OrderlineDetails.js',
             'point_of_sale/static/src/js/Screens/TicketScreen/ReprintReceiptScreen.js',
-            'point_of_sale/static/src/js/Screens/TicketScreen/AnularReceiptScreen.js', # <-- UPDATE 25-02-2022
+            # 'point_of_sale/static/src/js/Screens/TicketScreen/AnularReceiptScreen.js', # <-- UPDATE 25-02-2022
             'point_of_sale/static/src/js/Screens/TicketScreen/TicketScreen.js',
             'point_of_sale/static/src/js/Screens/PaymentScreen/PSNumpadInputButton.js',
             'point_of_sale/static/src/js/Screens/PaymentScreen/PaymentScreenNumpad.js',
