@@ -3595,9 +3595,12 @@ odoo.define('point_of_sale.models', function (require) {
                 price = price.toFixed(2); // #  <--------- Importante.
     
                 let quantity = datosRow['quantity'];
+
+                let esNotaCredito = false;
                 if( quantity < 0 ) {
                     nCantidadNegativa++;
                     quantity = quantity * -1;
+                    esNotaCredito = true;
                 }            
                 
                 let sub_total = price * quantity;
@@ -3629,21 +3632,39 @@ odoo.define('point_of_sale.models', function (require) {
     
                 let taxFormatIF = ' ';
                 let taxFormatUser = 'Exento';
-                if( taxes_id.length > 0 ) {
-                    let tax = taxes_id[0];
-                    switch(tax) {
-                        case 1: // Exento (ventas)
-                            taxFormatIF = ' ';
-                            taxFormatUser = 'Exento';
-                            break;                                  
-                        case 2: // IVA (16.0%) ventas
-                            taxFormatIF = '!';
-                            taxFormatUser = 'IVA (16.0%)';
-                            break;
-                        case 3: // IVA (8.0%) ventas
-                            taxFormatIF = '#';
-                            taxFormatUser = 'IVA (8.0%)';
-                            break;                                                  
+                    
+                if( esNotaCredito ) { // <------- Nota de Crédito.
+                    if( taxes_id.length > 0 ) {
+                        let tax = taxes_id[0];
+                        switch(tax) {
+                            case 1: // Exento (ventas)
+                                taxFormatIF = 'd0';
+                                break;                                  
+                            case 2: // IVA (16.0%) ventas
+                                taxFormatIF = 'd1';
+                                break;
+                            case 3: // IVA (8.0%) ventas
+                                taxFormatIF = 'd2';
+                                break;                                                  
+                        }
+                    }
+                } else { // <------- Factura.
+                    if( taxes_id.length > 0 ) {
+                        let tax = taxes_id[0];
+                        switch(tax) {
+                            case 1: // Exento (ventas)
+                                taxFormatIF = ' ';
+                                taxFormatUser = 'Exento';
+                                break;                                  
+                            case 2: // IVA (16.0%) ventas
+                                taxFormatIF = '!';
+                                taxFormatUser = 'IVA (16.0%)';
+                                break;
+                            case 3: // IVA (8.0%) ventas
+                                taxFormatIF = '#';
+                                taxFormatUser = 'IVA (8.0%)';
+                                break;                                                  
+                        }
                     }
                 }
     
@@ -3669,7 +3690,12 @@ odoo.define('point_of_sale.models', function (require) {
                 let tramaPrecioCantidad = tramaPrecio + tramaCantidad;
                 // console.log('Trama completa: ' + tramaPrecioCantidad);
     
-                detalleProductoIF += barcodeIF + taxFormatIF + tramaPrecioCantidad + display_name + '\n';
+                if( esNotaCredito ) { // <------- Nota de Crédito.
+                    detalleProductoIF += taxFormatIF + tramaPrecioCantidad + display_name + '\n';
+                } else { // <------- Factura.
+                    detalleProductoIF += barcodeIF + taxFormatIF + tramaPrecioCantidad + display_name + '\n';
+                }
+            
                 detalleProductoUser += barcodeUser + '\n' + quantity + 'x' + display_name + '-------> ' + sub_total + ' ('+taxFormatUser+')' + '\n';
                 console.log('---------------------------------------------');
             }
@@ -3704,11 +3730,11 @@ odoo.define('point_of_sale.models', function (require) {
                     '\n' + 
                     vatIF + 
                     '\n' + 
-                    'N° Factura' + 
+                    'Ingrese el N° de la Factura (formato: iF*00000000001)' + 
                     '\n' + 
-                    'Fecha de la Factura (DD/MM/AAAA)' + 
+                    'Ingrese la Fecha de la Factura (formato: iD*01/03/2022)' + 
                     '\n' + 
-                    'Código de la Impresora Fiscal' + 
+                    'Ingrese el Código de la Impresora Fiscal (formato: iI*Z1F1234567)' + 
                     '\n' +                 
                     direccionClienteIF +
                     '\n' + 
@@ -3716,7 +3742,7 @@ odoo.define('point_of_sale.models', function (require) {
                     '\n' + 
                     nombreCajeroIF + 
                     '\n' +
-                    'ACOMENTARIO NOTA DE CREDITO' +                  
+                    'ANOTA DE CREDITO' +                  
                     '\n';                
             } else { // <---- Facturación - Re-impresión.
                 datosIF = orderUidIF + '\n' + nombreClienteIF  + '\n' + vatIF + '\n' + direccionClienteIF + '\n' + telefonoClienteIF + '\n' + nombreCajeroIF + '\n';
