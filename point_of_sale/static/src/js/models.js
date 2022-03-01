@@ -3630,10 +3630,11 @@ odoo.define('point_of_sale.models', function (require) {
                 // console.log('taxes_id:');
                 // console.log(taxes_id);
     
-                let taxFormatIF = ' ';
+                let taxFormatIF = '';
                 let taxFormatUser = 'Exento';
                     
                 if( esNotaCredito ) { // <------- Nota de Crédito.
+                    taxFormatIF = 'd0'; // Exento (ventas)
                     if( taxes_id.length > 0 ) {
                         let tax = taxes_id[0];
                         switch(tax) {
@@ -3649,6 +3650,7 @@ odoo.define('point_of_sale.models', function (require) {
                         }
                     }
                 } else { // <------- Factura.
+                    taxFormatIF = ' '; // Exento (ventas)
                     if( taxes_id.length > 0 ) {
                         let tax = taxes_id[0];
                         switch(tax) {
