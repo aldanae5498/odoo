@@ -21,13 +21,14 @@
                                     <th groups="stock.group_tracking_lot"><strong>Package</strong></th>
                                     <!-- <th class="text-right"><strong>Available Quantity</strong></th> -->
                                     <th class="text-right" style="width: 160px!important;"><strong>Existencia</strong></th>
+                                    <th class="text-right" style="width: 160px!important;"><strong>Contada</strong></th>
                                     <th class="text-right" style="width: 160px!important;"><strong>Valor</strong></th>
                                 </tr>
                             </thead>
                             <tbody>                       
                                 <t t-foreach="locations" t-as="location">
                                     <tr groups="stock.group_stock_multi_locations">
-                                        <td colspan="5"><strong t-esc="location.display_name"/></td>
+                                        <td colspan="6"><strong t-esc="location.display_name"/></td>
                                         <td groups="stock.group_production_lot"></td>
                                         <td groups="stock.group_tracking_lot"></td>
                                         <td></td>
@@ -47,12 +48,22 @@
                                                 </t>
                                             </td>
                                             <td><span t-field="line.product_id"/></td>
-                                            <td><span t-field="line.product_id.standard_price"/></td>
+                                            <td class="text-right"><span t-field="line.product_id.standard_price"/></td>
                                             <td groups="stock.group_production_lot"><span t-field="line.lot_id"/></td>
                                             <td groups="stock.group_tracking_lot"><span t-field="line.package_id"/></td>
                                             <!-- <td class="text-right"><span t-field="line.available_quantity"/> <span t-field="line.product_uom_id" groups="uom.group_uom"/></td> -->
                                             <td class="text-right"><span t-field="line.quantity"/> <span t-field="line.product_uom_id" groups="uom.group_uom"/></td>
+                                            <td class="text-right">
+                                                <span t-field="line.inventory_quantity"/>                                             
+                                                <!-- If 0, then leave blank so users have space to write a number -->
+                                                <!-- 
+                                                <t t-if="line.inventory_quantity == 0"><span></span></t>
+                                                <t t-else=""><span t-field="line.inventory_quantity"/></t>
+                                                <span t-field="line.product_uom_id" groups="uom.group_uom"/>
+                                                -->
+                                            </td>
                                             <td class="text-right"> <span t-esc="valor" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
+                                            
                                             <t t-set="total_valoracion" t-value="total_valoracion+valor" />                                        
                                         </t>
                                         <t t-else="">
@@ -66,9 +77,7 @@
 
                         <br/>
 
-                        <h2 style="text-align: center!important;">Total</h2>
-                        <h3 style="text-align: center!important;"><t t-esc='total_valoracion' t-options="{'widget': 'float', 'precision': currency_precision}"/> $</h3>
-                    
+                        <h2 style="text-align: center!important;">Total: <t t-esc='total_valoracion' t-options="{'widget': 'float', 'precision': currency_precision}"/> $</h2>
                     </div>
                 </t>
             </t>
