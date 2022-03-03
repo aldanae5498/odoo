@@ -98,10 +98,13 @@
                                     <!-- ================= Sub Total Costo ================= -->
                                     <t t-set="sub_total_costo_admin" t-value="0" />
                                     <t t-foreach="sale_order.order_line" t-as="details_admin">
-                                        <!-- UPDATE 02-03-2022 -->
-                                        <t t-set="costo_admin" t-value="details_admin['purchase_price'] * details_admin['product_uom_qty']" />
+                                        <t t-set="costo_admin" t-value="details_admin.product_id.standard_price" />
                                         <t t-set="sub_total_costo_admin" t-value="sub_total_costo_admin+costo_admin" />
+                                        <!-- UPDATE 02-03-2022 -->
+                                        <!-- <t t-set="costo_admin" t-value="details_admin['purchase_price'] * details_admin['product_uom_qty']" /> -->
+                                        <!-- <t t-set="sub_total_costo_admin" t-value="sub_total_costo_admin+costo_admin" /> -->
                                     </t>
+
                                     <td style="text-align: right!important;"><t t-esc="sub_total_costo_admin" t-options="{'widget': 'float', 'precision': currency_precision}"/></td>
 
                                     <!-- ================= Margen ================= -->
