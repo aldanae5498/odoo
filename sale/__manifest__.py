@@ -43,9 +43,15 @@ This module contains all the common features of Sales Management and eCommerce.
         # UPDATE 01-02-2022 (3:09 PM)
         # Órdenes Globales
         'wizard/sale_ordenes_globales.xml',
+        # UPDATE 03-03-2022
+        # Órdenes Globales - Detalle
+        'wizard/sale_ordenes_globales_detalle.xml',        
         # UPDATE 01-02-2022 (6:17 PM)
         # Órdenes Globales     
         'views/report_ordenes_globales.xml',
+        # UPDATE 03-03-2022
+        # Órdenes Globales - Detalle     
+        'views/report_ordenes_globales_detalle.xml',        
     ],
     'demo': [
         'data/product_product_demo.xml',
