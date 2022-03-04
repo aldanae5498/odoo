@@ -7,3 +7,4 @@ from . import sale_make_invoice_advance
 from . import sale_order_cancel
 from . import sale_payment_link
 from . import sale_ordenes_globales
+from . import sale_ordenes_globales_detalle
