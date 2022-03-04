@@ -33,5 +33,14 @@
             <field name="report_name">sale.report_ordenes_globales</field>
         </record>
 
+        <!-- UPDATE 03-03-2022 -->
+        <!-- Órdenes Globales - Detalle -->
+        <record id="sale_ordenes_globales_detalle_report" model="ir.actions.report">
+            <field name="name">Órdenes Globales - Detalle</field>
+            <field name="model">report.sale.report_ordenes_globales_detalle</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">sale.report_ordenes_globales_detalle</field>
+        </record>        
+
     </data>
 </odoo>
