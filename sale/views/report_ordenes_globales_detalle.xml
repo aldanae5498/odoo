@@ -83,7 +83,7 @@
                                         <t t-set="acum_detalle_subtotal_costo_tpv" t-value="acum_detalle_subtotal_costo_tpv+details_tpv.total_cost"/>
                                         <t t-set="acum_detalle_subtotal_margen_tpv" t-value="acum_detalle_subtotal_margen_tpv+calcular_margen(details_tpv.total_cost, details_tpv.price_subtotal_incl, details_tpv.qty)"/>                                        
                                     </tr>
-                                    <tr style="background-color: #E0E0E0!important;">
+                                    <tr style="background-color: #F0F0F0!important;">
                                         <td class="text-left"></td>
                                         <td class="text-left">Total items</td>
                                         <td class="text-right"></td>
@@ -175,7 +175,7 @@
                                         <t t-set="acum_detalle_subtotal_costo_admin" t-value="acum_detalle_subtotal_costo_admin+details_admin.product_id.standard_price"/>
                                         <t t-set="acum_detalle_subtotal_margen_admin" t-value="acum_detalle_subtotal_margen_admin+calcular_margen(details_admin.product_id.standard_price, details_admin.price_total, details_admin.product_uom_qty)"/>                                        
                                     </tr>
-                                    <tr style="background-color: #E0E0E0!important;">
+                                    <tr style="background-color: #F0F0F0!important;">
                                         <td class="text-left"></td>
                                         <td class="text-left">Total items</td>
                                         <td class="text-right"></td>
