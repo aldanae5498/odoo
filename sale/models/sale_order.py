@@ -1257,14 +1257,14 @@ class ReportOrdenesGlobales(models.AbstractModel):
             'uom': product.uom_id.name
         } for (product, price_unit, discount), qty in products_sold.items()], key=lambda l: l['product_name'])
 
-        # ================ Total Venta Bs ================ #
+        # ================ Total Venta Bs (Punto de Venta) ================ #
         total_venta_bsf = 0.0
         for i in range(len(products)):
             total_venta_bsf += products[i]['sub_total_venta']
 
         total_venta_bsf = round(total_venta_bsf, decimales)        
 
-        # ================ Total Costo Bs ================ #            
+        # ================ Total Costo Bs (Punto de Venta) ================ #            
         total_costo_bsf = 0.0
         for i in range(len(products)):
             total_costo_bsf += products[i]['sub_total_costo']
@@ -1297,41 +1297,73 @@ class ReportOrdenesGlobales(models.AbstractModel):
         else:
             payments = []   
 
-        # ===================== Recorriendo el array de órdenes del Módulo de Punto de Venta ===================== #
-        total = 0.0
-        total_costo_bsf = 0.0
-        products_sold_administrativo = {}
+        # ===================== Recorriendo el array de órdenes del Módulo de Ventas (Administrativo) ===================== #
+        '''
+        total_admin = 0.0
+        total_costo_bsf_admin = 0.0
+        products_sold_admin = {}
         taxes_administrativo = {}
-        for sale_order in sale_orders:
+        for sale_order in orders:
             if user_currency != sale_order.pricelist_id.currency_id:
-                total += sale_order.pricelist_id.currency_id._convert(
+                total_admin += sale_order.pricelist_id.currency_id._convert(
                     sale_order.amount_total, user_currency, sale_order.company_id, sale_order.date_order or fields.Date.today())
             else:
-                total += sale_order.amount_total
+                total_admin += sale_order.amount_total
 
-            currency = sale_order.currency_id
+            currency = sale_order.session_id.currency_id
 
             for line in sale_order.order_line:
                 key = (line.product_id, line.price_unit, line.discount)
-                products_sold_administrativo.setdefault(key, 0.0)
-                products_sold_administrativo[key] += line.qty_invoiced
+                products_sold_admin.setdefault(key, 0.0)
+                products_sold_admin[key] += line.qty
 
-                '''
                 if line.tax_ids_after_fiscal_position:
                     line_taxes = line.tax_ids_after_fiscal_position.sudo().compute_all(line.price_unit * (1-(line.discount or 0.0)/100.0),
-                                                                                       currency, line.qty_invoiced, product=line.product_id, partner=line.order_id.partner_id or False)                
-                
-                    for tax in line_taxes['taxes']:
+                                                                                       currency, line.qty, product_sale_order=line.product_id, partner=line.order_id.partner_id or False)
+                    for tax in line_taxes['taxes_administrativo']:
                         taxes_administrativo.setdefault(
                             tax['id'], {'name': tax['name'], 'tax_amount': 0.0, 'base_amount': 0.0})
                         taxes_administrativo[tax['id']]['tax_amount'] += tax['amount']
                         taxes_administrativo[tax['id']]['base_amount'] += tax['base']
                 else:
                     taxes_administrativo.setdefault(
-                        0, {'name': _('No Taxes'), 'tax_amount': 0.0, 'base_amount': 0.0})
-                    taxes_administrativo[0]['base_amount'] += line.price_subtotal_incl
-                '''
+                        0, {'name': _('No taxes_administrativo'), 'tax_amount': 0.0, 'base_amount': 0.0})
+                    taxes_administrativo[0]['base_amount'] += line.price_subtotal_incl                
+                
 
+        # Productos de detalles del ventas del Punto de Venta:
+        products_sale_order = sorted([{
+            'product_id': product_sale_order.id,
+            'product_name': product_sale_order.name,
+            'code': product_sale_order.default_code,
+            'quantity': qty,
+            'price_unit': price_unit,
+            'standard_price': product_sale_order.standard_price * tasa_vigente,
+
+            'sub_total_costo': calcular_total_costo(product_sale_order.standard_price, qty),
+            'sub_total_venta': calcular_total_venta(price_unit, qty),
+            'margen': calcular_margen(product_sale_order.standard_price, price_unit, qty),
+            'margen_porcentaje': calcular_porcentaje_margen(product_sale_order.standard_price, price_unit, qty),
+
+            'discount': discount,
+            'uom': product_sale_order.uom_id.name
+        } for (product_sale_order, price_unit, discount), qty in products_sold_admin.items()], key=lambda l: l['product_name'])
+
+        # ================ Total Venta Bs (Punto de Venta) ================ #
+        total_venta_bsf_admin = 0.0
+        for i in range(len(products_sale_order)):
+            total_venta_bsf_admin += products_sale_order[i]['sub_total_venta']
+
+        total_venta_bsf_admin = round(total_venta_bsf_admin, decimales)        
+
+        # ================ Total Costo Bs (Punto de Venta) ================ #            
+        total_costo_bsf_admin = 0.0
+        for i in range(len(products_sale_order)):
+            total_costo_bsf_admin += products_sale_order[i]['sub_total_costo']
+        total_costo_bsf_admin = round(total_costo_bsf_admin, decimales)                
+        '''
+
+        # ================ Enviando datos ================ #
         return {
             'tasa_vigente': tasa_vigente,
             'tasa_vigente_usd': tasa_vigente_usd,
@@ -1341,7 +1373,10 @@ class ReportOrdenesGlobales(models.AbstractModel):
             'company_name': self.env.company.name,
 
             'orders': orders,
+            
             'sale_orders': sale_orders,
+            # 'products_sale_order': products_sale_order,
+
             'calcular_porcentaje_margen': calcular_porcentaje_margen
         }
 
@@ -1353,3 +1388,312 @@ class ReportOrdenesGlobales(models.AbstractModel):
             # data['date_start'], data['date_stop'], configs.ids))
             data['date_start'], data['date_stop']))
         return data
+
+class ReportOrdenesGlobalesDetalle(models.AbstractModel):
+    _name = 'report.sale.report_ordenes_globales_detalle'
+    _description = 'Órdenes Globales - Detalle'
+
+    @api.model
+    # def get_sale_details(self, date_start=False, date_stop=False, config_ids=False, session_ids=False):
+    def get_sale_details_detalle(self, date_start=False, date_stop=False, config_ids=False, session_ids=False, partner_id=False):
+        """ Serialise the orders of the requested time period, configs and sessions.
+
+        :param date_start: The dateTime to start, default today 00:00:00.
+        :type date_start: str.
+        :param date_stop: The dateTime to stop, default date_start + 23:59:59.
+        :type date_stop: str.
+        :param config_ids: Pos Config id's to include.
+        :type config_ids: list of numbers.
+        :param session_ids: Pos Config id's to include.
+        :type session_ids: list of numbers.
+
+        :returns: dict -- Serialised sales.
+        """
+        domain = [('state', 'in', ['paid', 'invoiced', 'done'])]
+
+        if (session_ids):
+            domain = AND([domain, [('session_id', 'in', session_ids)]])
+        else:
+            if date_start:
+                date_start = fields.Datetime.from_string(date_start)
+            else:
+                # start by default today 00:00:00
+                user_tz = pytz.timezone(self.env.context.get(
+                    'tz') or self.env.user.tz or 'UTC')
+                today = user_tz.localize(fields.Datetime.from_string(
+                    fields.Date.context_today(self)))
+                date_start = today.astimezone(pytz.timezone('UTC'))
+
+            if date_stop:
+                date_stop = fields.Datetime.from_string(date_stop)
+                # avoid a date_stop smaller than date_start
+                if (date_stop < date_start):
+                    date_stop = date_start + timedelta(days=1, seconds=-1)
+            else:
+                # stop by default today 23:59:59
+                date_stop = date_start + timedelta(days=1, seconds=-1)
+
+            domain = AND([domain,
+                          [('date_order', '>=', fields.Datetime.to_string(date_start)),
+                           ('date_order', '<=', fields.Datetime.to_string(date_stop))]
+                          ])
+            
+        if partner_id: # <------- Filtro de Cliente
+            domain = AND([domain, [('partner_id', '=', partner_id)]])
+            
+
+        # ================== Órdenes ================== #
+        # Punto de Venta:
+        orders = self.env['pos.order'].search(domain)
+
+        # Administrativo:
+        domain_sale_order = [('state', 'in', ['sale'])]
+        domain_sale_order = AND([domain_sale_order,
+                        [('date_order', '>=', fields.Datetime.to_string(date_start)),
+                        ('date_order', '<=', fields.Datetime.to_string(date_stop))]
+                        ])        
+
+        if partner_id: # <------- Filtro de Cliente
+            domain_sale_order = AND([domain_sale_order, [('partner_id', '=', partner_id)]])
+
+        sale_orders = self.env['sale.order'].search(domain_sale_order)
+
+        decimales = 2
+        user_currency = self.env.company.currency_id
+
+        # ================== Precio del dólar ================== #
+        rate_usd = self.env['res.currency'].search(
+            [('name', '=', 'USD')], limit=1).rate
+        rate_usd = round(rate_usd, decimales)
+
+        # ================== Precio del Bolívar ================== #
+        rate_bolivar = self.env['res.currency'].search(
+            [('name', '=', 'VEF')], limit=1).rate      
+
+        # ================== Tasa Vigente ================== #
+        tasa_vigente = round(rate_bolivar, decimales) / round(rate_usd, decimales)
+        tasa_vigente = round(tasa_vigente, decimales)
+
+        # ================== Funciones de cálculo ================== #
+        def calcular_total_costo(costo, cantidad):
+            res = costo * cantidad * tasa_vigente
+            return round(res, decimales)
+
+        def calcular_total_venta(precio_venta, cantidad):
+            res = precio_venta * cantidad
+            return round(res, decimales)
+
+        def calcular_margen(costo, precio_venta, cantidad):
+            res = 0
+            if cantidad != False:
+                total_costo = calcular_total_costo(costo, cantidad)
+                total_venta = calcular_total_venta(precio_venta, cantidad)
+                res = total_venta - total_costo
+            else:
+                res = precio_venta - costo
+
+            return round(res, decimales)
+
+        # El % del margen se calcula en función al costo:
+        def calcular_porcentaje_margen(costo, precio_venta, cantidad):
+            res = 0
+            total_costo = 0
+            
+            margen = 0
+            if cantidad != False:
+                total_costo = calcular_total_costo(costo, cantidad)
+                margen = calcular_margen(costo, precio_venta, cantidad)
+                if total_costo > 0:
+                    res = (margen / total_costo) * 100
+            else:
+                total_costo = costo
+                margen = calcular_margen(costo, precio_venta, False)
+                if total_costo > 0:
+                    res = (margen / total_costo) * 100
+
+            return round(res, decimales)
+
+        # ===================== Recorriendo el array de órdenes del Módulo de Punto de Venta ===================== #
+        total = 0.0
+        total_costo_bsf = 0.0
+        products_sold = {}
+        taxes = {}
+        for order in orders:
+            if user_currency != order.pricelist_id.currency_id:
+                total += order.pricelist_id.currency_id._convert(
+                    order.amount_total, user_currency, order.company_id, order.date_order or fields.Date.today())
+            else:
+                total += order.amount_total
+
+            currency = order.session_id.currency_id
+
+            for line in order.lines:
+                key = (line.product_id, line.price_unit, line.discount)
+                products_sold.setdefault(key, 0.0)
+                products_sold[key] += line.qty
+
+                if line.tax_ids_after_fiscal_position:
+                    line_taxes = line.tax_ids_after_fiscal_position.sudo().compute_all(line.price_unit * (1-(line.discount or 0.0)/100.0),
+                                                                                       currency, line.qty, product=line.product_id, partner=line.order_id.partner_id or False)
+                    for tax in line_taxes['taxes']:
+                        taxes.setdefault(
+                            tax['id'], {'name': tax['name'], 'tax_amount': 0.0, 'base_amount': 0.0})
+                        taxes[tax['id']]['tax_amount'] += tax['amount']
+                        taxes[tax['id']]['base_amount'] += tax['base']
+                else:
+                    taxes.setdefault(
+                        0, {'name': _('No Taxes'), 'tax_amount': 0.0, 'base_amount': 0.0})
+                    taxes[0]['base_amount'] += line.price_subtotal_incl
+
+
+        # Productos de detalles del ventas del Punto de Venta:
+        products = sorted([{
+            'product_id': product.id,
+            'product_name': product.name,
+            'code': product.default_code,
+            'quantity': qty,
+            'price_unit': price_unit,
+            'standard_price': product.standard_price * tasa_vigente,
+
+            'sub_total_costo': calcular_total_costo(product.standard_price, qty),
+            'sub_total_venta': calcular_total_venta(price_unit, qty),
+            'margen': calcular_margen(product.standard_price, price_unit, qty),
+            'margen_porcentaje': calcular_porcentaje_margen(product.standard_price, price_unit, qty),
+
+            'discount': discount,
+            'uom': product.uom_id.name
+        } for (product, price_unit, discount), qty in products_sold.items()], key=lambda l: l['product_name'])
+
+        # ================ Total Venta Bs (Punto de Venta) ================ #
+        total_venta_bsf = 0.0
+        for i in range(len(products)):
+            total_venta_bsf += products[i]['sub_total_venta']
+
+        total_venta_bsf = round(total_venta_bsf, decimales)        
+
+        # ================ Total Costo Bs (Punto de Venta) ================ #            
+        total_costo_bsf = 0.0
+        for i in range(len(products)):
+            total_costo_bsf += products[i]['sub_total_costo']
+        total_costo_bsf = round(total_costo_bsf, decimales)
+        
+        total_costo_usd = 0
+        tasa_vigente_usd = 0
+        total_paid_usd = 0
+        margen_usd = 0
+        
+        if tasa_vigente != 0:
+            total_costo_usd = round((total_costo_bsf / tasa_vigente), decimales)
+            tasa_vigente_usd = rate_usd / tasa_vigente
+            total_paid_usd = round((user_currency.round(total) / tasa_vigente), decimales)
+            margen_usd = calcular_margen(total_costo_usd, (user_currency.round(total) / tasa_vigente), False)
+
+        # Métodos de pago (Punto de Venta):
+        payment_ids = self.env["pos.payment"].search(
+            [('pos_order_id', 'in', orders.ids)]).ids
+        if payment_ids:
+            self.env.cr.execute("""
+                SELECT method.name, sum(amount) total
+                FROM pos_payment AS payment,
+                     pos_payment_method AS method
+                WHERE payment.payment_method_id = method.id
+                    AND payment.id IN %s
+                GROUP BY method.name
+            """, (tuple(payment_ids),))
+            payments = self.env.cr.dictfetchall()
+        else:
+            payments = []   
+
+        # ===================== Recorriendo el array de órdenes del Módulo de Ventas (Administrativo) ===================== #
+        '''
+        total_admin = 0.0
+        total_costo_bsf_admin = 0.0
+        products_sold_admin = {}
+        taxes_administrativo = {}
+        for sale_order in orders:
+            if user_currency != sale_order.pricelist_id.currency_id:
+                total_admin += sale_order.pricelist_id.currency_id._convert(
+                    sale_order.amount_total, user_currency, sale_order.company_id, sale_order.date_order or fields.Date.today())
+            else:
+                total_admin += sale_order.amount_total
+
+            currency = sale_order.session_id.currency_id
+
+            for line in sale_order.order_line:
+                key = (line.product_id, line.price_unit, line.discount)
+                products_sold_admin.setdefault(key, 0.0)
+                products_sold_admin[key] += line.qty
+
+                if line.tax_ids_after_fiscal_position:
+                    line_taxes = line.tax_ids_after_fiscal_position.sudo().compute_all(line.price_unit * (1-(line.discount or 0.0)/100.0),
+                                                                                       currency, line.qty, product_sale_order=line.product_id, partner=line.order_id.partner_id or False)
+                    for tax in line_taxes['taxes_administrativo']:
+                        taxes_administrativo.setdefault(
+                            tax['id'], {'name': tax['name'], 'tax_amount': 0.0, 'base_amount': 0.0})
+                        taxes_administrativo[tax['id']]['tax_amount'] += tax['amount']
+                        taxes_administrativo[tax['id']]['base_amount'] += tax['base']
+                else:
+                    taxes_administrativo.setdefault(
+                        0, {'name': _('No taxes_administrativo'), 'tax_amount': 0.0, 'base_amount': 0.0})
+                    taxes_administrativo[0]['base_amount'] += line.price_subtotal_incl                
+                
+
+        # Productos de detalles del ventas del Punto de Venta:
+        products_sale_order = sorted([{
+            'product_id': product_sale_order.id,
+            'product_name': product_sale_order.name,
+            'code': product_sale_order.default_code,
+            'quantity': qty,
+            'price_unit': price_unit,
+            'standard_price': product_sale_order.standard_price * tasa_vigente,
+
+            'sub_total_costo': calcular_total_costo(product_sale_order.standard_price, qty),
+            'sub_total_venta': calcular_total_venta(price_unit, qty),
+            'margen': calcular_margen(product_sale_order.standard_price, price_unit, qty),
+            'margen_porcentaje': calcular_porcentaje_margen(product_sale_order.standard_price, price_unit, qty),
+
+            'discount': discount,
+            'uom': product_sale_order.uom_id.name
+        } for (product_sale_order, price_unit, discount), qty in products_sold_admin.items()], key=lambda l: l['product_name'])
+
+        # ================ Total Venta Bs (Punto de Venta) ================ #
+        total_venta_bsf_admin = 0.0
+        for i in range(len(products_sale_order)):
+            total_venta_bsf_admin += products_sale_order[i]['sub_total_venta']
+
+        total_venta_bsf_admin = round(total_venta_bsf_admin, decimales)        
+
+        # ================ Total Costo Bs (Punto de Venta) ================ #            
+        total_costo_bsf_admin = 0.0
+        for i in range(len(products_sale_order)):
+            total_costo_bsf_admin += products_sale_order[i]['sub_total_costo']
+        total_costo_bsf_admin = round(total_costo_bsf_admin, decimales)                
+        '''
+
+        # ================ Enviando datos ================ #
+        return {
+            'tasa_vigente': tasa_vigente,
+            'tasa_vigente_usd': tasa_vigente_usd,
+            'rate_usd': rate_usd,
+
+            'payments': payments,
+            'company_name': self.env.company.name,
+
+            # Funciones:
+            'calcular_margen': calcular_margen,
+            'calcular_porcentaje_margen': calcular_porcentaje_margen,
+
+            'orders': orders,
+            'sale_orders': sale_orders,
+
+            'partner_id': partner_id,
+        }
+
+    @api.model
+    def _get_report_values(self, docids, data=None):
+        data = dict(data or {})
+        # configs = self.env['pos.config'].browse(data['config_ids'])
+        data.update(self.get_sale_details_detalle(
+            # data['date_start'], data['date_stop'], configs.ids))
+            data['date_start'], data['date_stop'], False, False, data['partner_id'] ))
+        return data        
