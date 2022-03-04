@@ -44,6 +44,13 @@
             parent="menu_sale_report"
             sequence="2"/>        
 
+        <!-- UPDATE 01-02-2022 (2:51 PM) -->
+        <menuitem id="menu_report_ordenes_globales_detalle"
+            name="Órdenes Globales - Detalle"
+            action="action_reporte_ordenes_globales_detalle"
+            parent="menu_sale_report"
+            sequence="3"/>                    
+
         <menuitem id="menu_sale_config"
             name="Configuration"
             parent="sale_menu_root"
