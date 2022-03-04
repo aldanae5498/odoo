@@ -100,4 +100,13 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>    
+
+    <!-- UPDATE 03-03-2022 -->
+    <!-- Órdenes Globales - Detalle -->
+    <record id="action_reporte_ordenes_globales_detalle" model="ir.actions.act_window">
+        <field name="name">Órdenes Globales - Detalle</field>
+        <field name="res_model">sale.ordenes.globales.detalle.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>        
 </odoo>
